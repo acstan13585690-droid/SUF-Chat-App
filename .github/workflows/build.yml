@@ -1,0 +1,52 @@
+
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract ZIP
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unzip
+          unzip -q SUF-Chat-main.zip -d source
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Fix dependency name
+        working-directory: source/SUF-Chat-main/flutter_app
+        run: sed -i 's/flutter_linter:/flutter_lints:/' pubspec.yaml
+
+      - name: Get dependencies
+        working-directory: source/SUF-Chat-main/flutter_app
+        run: flutter pub get
+
+      - name: Build APK
+        working-directory: source/SUF-Chat-main/flutter_app
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: SUF-Chat-APK
+          path: source/SUF-Chat-main/flutter_app/build/app/outputs/flutter-apk/app-release.apk
+          
